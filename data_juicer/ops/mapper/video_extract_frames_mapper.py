@@ -43,6 +43,7 @@ class VideoExtractFramesMapper(Mapper):
         duration: float = 0,
         frame_dir: str = None,
         frame_key=MetaKeys.video_frames,
+        nested_common_prefix: str = None,
         *args,
         **kwargs,
     ):
@@ -88,6 +89,7 @@ class VideoExtractFramesMapper(Mapper):
         self.duration = duration
         self.frame_key = frame_key
         self.frame_fname_template = 'frame_{}.jpg'
+        self.nested_common_prefix = nested_common_prefix
 
     def _get_default_frame_dir(self, original_filepath):
         original_dir = os.path.dirname(original_filepath)
@@ -148,9 +150,16 @@ class VideoExtractFramesMapper(Mapper):
                     frames = [frame.to_image() for frame in frames]
 
                     if self.frame_dir:
-                        frame_dir = osp.join(
-                            self.frame_dir,
-                            osp.splitext(osp.basename(video_key))[0])
+                        if self.nested_common_prefix:
+                            d = video_key.replace(self.nested_common_prefix, "")
+                            d = d[1:] if d.startswith("/") else d
+                            frame_dir = osp.join(
+                                self.frame_dir,
+                                osp.splitext(d)[0])
+                        else:
+                            frame_dir = osp.join(
+                                self.frame_dir,
+                                osp.splitext(osp.basename(video_key))[0])
                     else:
                         # video path as frames directory
                         frame_dir = self._get_default_frame_dir(video_key)
